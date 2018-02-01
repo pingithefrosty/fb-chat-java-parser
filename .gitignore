@@ -3,6 +3,9 @@ data/
 
 # Compiled class file
 *.class
+.idea
+out
+*.iml
 
 # Log file
 *.log
