@@ -1,21 +1,22 @@
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 
 public class Main {
-  static List<String> lines = new ArrayList<>();
-  static String myName = "Barnabas Kdr";
-  static String othersName;
+  private static List<String> lines = new ArrayList<>();
+  private static final String myName = "Barnabas Kdr";
+  private static String othersName;
+  private static ArrayList<Message> messageList = new ArrayList<>();
+  private static final String CSV_SEPARATOR = "|";
 
   public static void main(String[] args) {
     readFile("data/Katka.html");
-    createMessageObjects();
-
-    fieldIdentifier();
-    writeFile(divideByHtmlBlockIntoArray(createStringFromList(lines)),"data/Katka2.html");
+    divideByHtmlBlockIntoArray(createStringFromList(lines));
+    writeToCSV(messageList, "data/Katka2.csv");
   }
 
   private static void othersNameGetter(List<String> wholeConversation) {
@@ -35,11 +36,21 @@ public class Main {
     }
   }
 
-  private static String[] createMessageObjects(List<String> longList) {
+  private static void createMessageObjects(List<String> longList) {
     for (int i = 0; i < longList.size(); i++) {
-      
+      if (fieldIdentifier(longList.get(i)) == 0) {
+        Message message = new Message();
+        message.setUser(longList.get(i));
+        message.setDate(longList.get(i+1));
+        String allContent = "";
+        allContent += longList.get(i+2);
+        if (fieldIdentifier(longList.get(i+3)) == 2) {
+          allContent += longList.get(i+3);
+        }
+        message.setContent(allContent);
+        messageList.add(message);
+      }
     }
-    return null;
   }
 
   private static List<String> divideByHtmlBlockIntoArray(String result) {
@@ -53,6 +64,9 @@ public class Main {
       }
     }
     othersNameGetter(splittedWithoutNull);
+    splittedWithoutNull.addAll(Arrays.asList("", "", ""));
+    createMessageObjects(splittedWithoutNull);
+    System.out.println(messageList);
     return splittedWithoutNull;
   }
 
@@ -65,20 +79,39 @@ public class Main {
     }
   }
 
-  private static void writeFile(List<String> output, String path) {
-      try {
-        Path filePath = Paths.get(path);
-        Files.write(filePath, output);
-      } catch (Exception e) {
-        System.out.println("Could not write file!");
-      }
-    }
-
   private static String createStringFromList(List<String> lines) {
     String everyString = "";
     for (int i = 0; i < lines.size(); i++) {
       everyString += lines.get(i);
     }
     return everyString;
+  }
+
+  private static void writeFile(List<String> output, String path) {
+    try {
+      Path filePath = Paths.get(path);
+      Files.write(filePath, output);
+    } catch (Exception e) {
+      System.out.println("Could not write file!");
+    }
+  }
+
+  private static void writeToCSV(ArrayList<Message> messageList, String path) {
+    try {
+      BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"));
+      for (Message message : messageList) {
+        StringBuffer oneLine = new StringBuffer();
+        oneLine.append(message.getUser().trim().length() == 0? "" : message.getUser());
+        oneLine.append(CSV_SEPARATOR);
+        oneLine.append(message.getDate().trim().length() == 0? "" : message.getDate());
+        oneLine.append(CSV_SEPARATOR);
+        oneLine.append(message.getContent().trim().length() == 0? "" : message.getContent());
+        oneLine.append(CSV_SEPARATOR);
+        bw.write(oneLine.toString());
+        bw.newLine();
+      }
+      bw.flush();
+      bw.close();
+    } catch (Exception e) {}
   }
 }

@@ -4,6 +4,7 @@ public class Message {
   private String content;
 
   public Message() {
+    this.content = " ";
   }
 
   public Message(String user, String date, String content) {
