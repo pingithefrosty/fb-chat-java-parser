@@ -8,24 +8,27 @@ import java.util.List;
 
 public class Main {
   private static List<String> lines = new ArrayList<>();
-  private static final String myName = "Barnabas Kdr";
-  private static String othersName;
-  private static ArrayList<Message> messageList = new ArrayList<>();
+  private static final String MY_NAME = "Barnabas Kdr";
   private static final String CSV_SEPARATOR = "|";
+  private static ArrayList<String> participantList = new ArrayList<>();
+  private static ArrayList<Message> messageList = new ArrayList<>();
 
   public static void main(String[] args) {
-    readFile("data/Katka.html");
-    divideByHtmlBlockIntoArray(createStringFromList(lines));
-    writeToCSV(messageList, "data/Katka2.csv");
+    readFile("data/valina.html");
+    ArrayList<String> writeTest = divideByHtmlBlockIntoArray(createStringFromList(lines));
+    writeToCSV(messageList, "data/valina2.csv");
+    writeFile(writeTest,"data/valina2.html");
   }
 
   private static void othersNameGetter(List<String> wholeConversation) {
-    othersName = wholeConversation.get(0).split("&nbsp;")[1];
-    System.out.println(othersName);
+    String othersPossibleName = wholeConversation.get(0).split("&nbsp;")[1];
+    participantList.addAll(Arrays.asList(othersPossibleName.split(", ")));
+    participantList.add(MY_NAME);
+    System.out.println(participantList);
   }
 
   private static int fieldIdentifier(String excrept) {
-    if ((excrept.equals(othersName)) || excrept.equals(myName)) {
+    if (participantList.contains(excrept)) {
       return 0;
     } else if ((excrept.startsWith("Monday")) || (excrept.startsWith("Tuesday")) || (excrept.startsWith("Wednesday")) ||
         (excrept.startsWith("Thursday")) || (excrept.startsWith("Friday")) || (excrept.startsWith("Saturday")) ||
@@ -43,7 +46,9 @@ public class Main {
         message.setUser(longList.get(i));
         message.setDate(longList.get(i+1));
         String allContent = "";
-        allContent += longList.get(i+2);
+        if (fieldIdentifier(longList.get(i+2)) == 2) {
+          allContent += longList.get(i+2);
+        }
         if (fieldIdentifier(longList.get(i+3)) == 2) {
           allContent += longList.get(i+3);
         }
@@ -53,11 +58,11 @@ public class Main {
     }
   }
 
-  private static List<String> divideByHtmlBlockIntoArray(String result) {
+  private static ArrayList<String> divideByHtmlBlockIntoArray(String result) {
     String[] dividedToTwo = result.split("<div class=\"thread\">");
     String onlyThread = dividedToTwo[1];
     String[] splitted = onlyThread.split("<(.*?)>", -1);
-    List<String> splittedWithoutNull = new ArrayList<>();
+    ArrayList<String> splittedWithoutNull = new ArrayList<>();
     for (int i = 0; i < splitted.length; i++) {
       if (!splitted[i].isEmpty()) {
         splittedWithoutNull.add(splitted[i]);
@@ -66,7 +71,6 @@ public class Main {
     othersNameGetter(splittedWithoutNull);
     splittedWithoutNull.addAll(Arrays.asList("", "", ""));
     createMessageObjects(splittedWithoutNull);
-    System.out.println(messageList);
     return splittedWithoutNull;
   }
 
@@ -112,6 +116,6 @@ public class Main {
       }
       bw.flush();
       bw.close();
-    } catch (Exception e) {}
+    } catch (Exception ignored) {}
   }
 }
