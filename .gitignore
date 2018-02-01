@@ -1,3 +1,6 @@
+# Private data folders
+data/
+
 # Compiled class file
 *.class
 
