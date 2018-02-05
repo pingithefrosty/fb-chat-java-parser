@@ -1,34 +1,42 @@
-import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import com.sun.deploy.util.StringUtils;
+
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
-  private static List<String> lines = new ArrayList<>();
   private static final String MY_NAME = "Barnabas Kdr";
-  private static final String CSV_SEPARATOR = "|";
-  private static ArrayList<String> participantList = new ArrayList<>();
-  private static ArrayList<Message> messageList = new ArrayList<>();
+  public static ArrayList<Thread> threadList = new ArrayList<>();
+
 
   public static void main(String[] args) {
-    readFile("data/valina.html");
-    ArrayList<String> writeTest = divideByHtmlBlockIntoArray(createStringFromList(lines));
-    writeToCSV(messageList, "data/valina2.csv");
-    writeFile(writeTest,"data/valina2.html");
+    ReadWrite.listAndReadFiles("data");
+    for (int i = 0; i < threadList.size(); i++) {
+      divideByHtmlBlockIntoArray(threadList.get(i));
+      participantGetter(threadList.get(i));
+      createMessageObjects(threadList.get(i));
+      ReadWrite.writeFile(threadList.get(i).getLinesAsStrings(),
+          "data/" + threadList.get(i).getConversationName() + ".html");
+      ReadWrite.writeToCSV(threadList.get(i), "data/" + threadList.get(i).getConversationName() + ".csv");
+    }
   }
 
-  private static void othersNameGetter(List<String> wholeConversation) {
-    String othersPossibleName = wholeConversation.get(0).split("&nbsp;")[1];
-    participantList.addAll(Arrays.asList(othersPossibleName.split(", ")));
-    participantList.add(MY_NAME);
-    System.out.println(participantList);
+  private static void participantGetter(Thread thread) {
+    List<String> threadLines = thread.getLinesAsStrings();
+    thread.setConversationName(threadLines.get(0).replace("Conversation with ", ""));
+    String[] othersPossibleName = threadLines.get(1).replace("Participants: ", "").split(", ");
+    thread.getParticipantsInThread().addAll(Arrays.asList(othersPossibleName));
+    thread.getParticipantsInThread().add(MY_NAME);
+    System.out.println(thread.getParticipantsInThread());
+    System.out.println(thread.getConversationName());
   }
 
-  private static int fieldIdentifier(String excrept) {
-    if (participantList.contains(excrept)) {
+  private static int fieldIdentifier(Thread thread, String excrept) {
+    if (thread.getParticipantsInThread().contains(excrept)) {
       return 0;
     } else if ((excrept.startsWith("Monday")) || (excrept.startsWith("Tuesday")) || (excrept.startsWith("Wednesday")) ||
         (excrept.startsWith("Thursday")) || (excrept.startsWith("Friday")) || (excrept.startsWith("Saturday")) ||
@@ -39,26 +47,28 @@ public class Main {
     }
   }
 
-  private static void createMessageObjects(List<String> longList) {
+  private static void createMessageObjects(Thread thread) {
+    List<String> longList = thread.getLinesAsStrings();
     for (int i = 0; i < longList.size(); i++) {
-      if (fieldIdentifier(longList.get(i)) == 0) {
+      if (fieldIdentifier(thread, longList.get(i)) == 0) {
         Message message = new Message();
         message.setUser(longList.get(i));
-        message.setDate(longList.get(i+1));
+        message.setDate(longList.get(i + 1));
         String allContent = "";
-        if (fieldIdentifier(longList.get(i+2)) == 2) {
-          allContent += longList.get(i+2);
+        if (fieldIdentifier(thread, longList.get(i + 2)) == 2) {
+          allContent += longList.get(i + 2);
         }
-        if (fieldIdentifier(longList.get(i+3)) == 2) {
-          allContent += longList.get(i+3);
+        if (fieldIdentifier(thread, longList.get(i+3)) == 2) {
+          allContent += longList.get(i + 3);
         }
         message.setContent(allContent);
-        messageList.add(message);
+        thread.getMessagesInThread().add(message);
       }
     }
   }
 
-  private static ArrayList<String> divideByHtmlBlockIntoArray(String result) {
+  private static void divideByHtmlBlockIntoArray(Thread thread) {
+    String result = createStringFromList(thread.getLinesAsStrings());
     String[] dividedToTwo = result.split("<div class=\"thread\">");
     String onlyThread = dividedToTwo[1];
     String[] splitted = onlyThread.split("<(.*?)>", -1);
@@ -68,19 +78,20 @@ public class Main {
         splittedWithoutNull.add(splitted[i]);
       }
     }
-    othersNameGetter(splittedWithoutNull);
     splittedWithoutNull.addAll(Arrays.asList("", "", ""));
-    createMessageObjects(splittedWithoutNull);
-    return splittedWithoutNull;
+    thread.setLinesAsStrings(splittedWithoutNull);
   }
 
-  private static void readFile(String path) {
-    try {
-      Path filePath = Paths.get(path);
-      lines = Files.readAllLines(filePath);
-    } catch (Exception e) {
-      System.out.println("Could not read file");
+  private static String removeInvalidCharacters(String msg) {
+    String[] htmlCharacter = {"&#034;","&#035;","&#036;","&#037;","&#038;","&#039;","&#040;", "&#041;",
+        "&#042;","&#043;","&#044;","&#045;","&#046;","&#047;","&#058;","&#059;","&#060;","&#061;",
+        "&#062;","&#063;","&#064;","&#091;","&#092;","&#093;","&#094;","&#095;","&#096;","&#125;"};
+    String[] htmlReplacement = {"\"","#","$","%","&","'","(",")","*","+",",","-",
+        ".","/",":",";","<","=",">","?","@","[","\\","]","^","_","`","~"};
+    for (int i = 0; i < htmlCharacter.length; i++) {
+      msg = Pattern.compile(htmlCharacter[i]).matcher(msg).replaceAll(htmlReplacement[i]);
     }
+    return msg;
   }
 
   private static String createStringFromList(List<String> lines) {
@@ -88,34 +99,6 @@ public class Main {
     for (int i = 0; i < lines.size(); i++) {
       everyString += lines.get(i);
     }
-    return everyString;
-  }
-
-  private static void writeFile(List<String> output, String path) {
-    try {
-      Path filePath = Paths.get(path);
-      Files.write(filePath, output);
-    } catch (Exception e) {
-      System.out.println("Could not write file!");
-    }
-  }
-
-  private static void writeToCSV(ArrayList<Message> messageList, String path) {
-    try {
-      BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"));
-      for (Message message : messageList) {
-        StringBuffer oneLine = new StringBuffer();
-        oneLine.append(message.getUser().trim().length() == 0? "" : message.getUser());
-        oneLine.append(CSV_SEPARATOR);
-        oneLine.append(message.getDate().trim().length() == 0? "" : message.getDate());
-        oneLine.append(CSV_SEPARATOR);
-        oneLine.append(message.getContent().trim().length() == 0? "" : message.getContent());
-        oneLine.append(CSV_SEPARATOR);
-        bw.write(oneLine.toString());
-        bw.newLine();
-      }
-      bw.flush();
-      bw.close();
-    } catch (Exception ignored) {}
+    return removeInvalidCharacters(everyString);
   }
 }

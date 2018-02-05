@@ -1,4 +1,5 @@
 public class Message {
+  private String conversation;
   private String user;
   private String date;
   private String content;
@@ -7,10 +8,19 @@ public class Message {
     this.content = " ";
   }
 
-  public Message(String user, String date, String content) {
+  public Message(String conversation, String user, String date, String content) {
+    this.conversation = conversation;
     this.user = user;
     this.date = date;
     this.content = content;
+  }
+
+  public String getConversation() {
+    return conversation;
+  }
+
+  public void setConversation(String conversation) {
+    this.conversation = conversation;
   }
 
   public String getUser() {
