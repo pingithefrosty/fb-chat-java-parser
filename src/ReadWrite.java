@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ReadWrite {
@@ -37,7 +38,7 @@ public class ReadWrite {
     }
   }
 
-  public static void writeToCSV(Thread thread, String path) {
+  public static void writeToIndividualCSV(Thread thread, String path) {
     try {
       BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"));
       for (Message message : thread.getMessagesInThread()) {
@@ -53,6 +54,43 @@ public class ReadWrite {
       }
       bw.flush();
       bw.close();
-    } catch (Exception ignored) {}
+    } catch (Exception e) {
+      System.out.println("Could not write file!");
+    }
+  }
+
+  public static void writeToCombinedCSV(ArrayList<Thread> threadList, String path) {
+    try {
+      BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path), "UTF-8"));
+      StringBuffer header = new StringBuffer();
+      ArrayList<String> columnHeaders = new ArrayList<>(Arrays.asList("Conversation","Group?","Converted","ID","Sender",
+          "Year","Month","Day","Day of the week","Hour","Zone","Chars","Words","Message"));
+      for (String columnHeader : columnHeaders) {
+        header.append(columnHeader.trim().length() == 0 ? "" : columnHeader);
+        header.append(CSV_SEPARATOR);
+      }
+      bw.write(header.toString());
+      bw.newLine();
+      for (Thread thread : threadList) {
+        for (Message message : thread.getMessagesInThread()) {
+          StringBuffer oneLine = new StringBuffer();
+          ArrayList<String> columns = new ArrayList<>(Arrays.asList(thread.getConversationName(),
+              thread.getGroupConversation(), thread.getLastUpdated(), message.getMessageId(), message.getUser(),
+              message.getDateOutputYear(), message.getDateOutputMonth(), message.getDateOutputDay(),
+              message.getDateOutputDayOfWeek(), message.getDateOutputHourMinute(), message.getDateOutputTimeZone(),
+              message.getContentNumberOfCharacters(), message.getContentNumberOfWords(), message.getContent()));
+          for (String column : columns) {
+            oneLine.append(column.trim().length() == 0 ? "" : column);
+            oneLine.append(CSV_SEPARATOR);
+          }
+          bw.write(oneLine.toString());
+          bw.newLine();
+        }
+      }
+      bw.flush();
+      bw.close();
+    } catch (Exception e) {
+      System.out.println("Could not write file!");
+    }
   }
 }

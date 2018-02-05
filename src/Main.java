@@ -1,27 +1,41 @@
-import com.sun.deploy.util.StringUtils;
-
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 public class Main {
   private static final String MY_NAME = "Barnabas Kdr";
+  public static final AtomicInteger count = new AtomicInteger(0);
   public static ArrayList<Thread> threadList = new ArrayList<>();
+//Bugged: 414/555(left), 1438(myself), 1081(name of the participant written)
 
-
-  public static void main(String[] args) {
+  public static void main(String[] args) throws ParseException {
     ReadWrite.listAndReadFiles("data");
     for (int i = 0; i < threadList.size(); i++) {
       divideByHtmlBlockIntoArray(threadList.get(i));
       participantGetter(threadList.get(i));
       createMessageObjects(threadList.get(i));
-      ReadWrite.writeFile(threadList.get(i).getLinesAsStrings(),
-          "data/" + threadList.get(i).getConversationName() + ".html");
-      ReadWrite.writeToCSV(threadList.get(i), "data/" + threadList.get(i).getConversationName() + ".csv");
+      reformatMessageDate(threadList.get(i));
+    }
+    ReadWrite.writeToCombinedCSV(threadList, "data/combined_" + currentTime() + ".csv");
+  }
+
+  private static void reformatMessageDate(Thread thread) throws ParseException {
+    for (int i = 0; i < thread.getMessagesInThread().size(); i++) {
+      Message message = thread.getMessagesInThread().get(i);
+      String[] dateSeparatedByComma = message.getDate().split(", ");
+      message.setDateOutputDayOfWeek(dateSeparatedByComma[0]);
+      String[] monthDay = dateSeparatedByComma[1].split(" ");
+      message.setDateOutputMonth(monthDay[0]);
+      message.setDateOutputDay(monthDay[1]);
+      String[] rest = dateSeparatedByComma[2].split(" ");
+      message.setDateOutputYear(rest[0]);
+      message.setDateOutputTimeZone(rest[3]);
+      SimpleDateFormat displayFormat = new SimpleDateFormat("HH:mm");
+      SimpleDateFormat parseFormat = new SimpleDateFormat("hh:mma");
+      Date date = parseFormat.parse(rest[2]);
+      message.setDateOutputHourMinute(displayFormat.format(date));
     }
   }
 
@@ -31,16 +45,18 @@ public class Main {
     String[] othersPossibleName = threadLines.get(1).replace("Participants: ", "").split(", ");
     thread.getParticipantsInThread().addAll(Arrays.asList(othersPossibleName));
     thread.getParticipantsInThread().add(MY_NAME);
-    System.out.println(thread.getParticipantsInThread());
-    System.out.println(thread.getConversationName());
+    if (thread.getParticipantsInThread().size() > 2) {
+      thread.setGroupConversation("1");
+    }
+    System.out.println(thread.getOriginalFileName() + "   " + thread.getConversationName());
   }
 
   private static int fieldIdentifier(Thread thread, String excrept) {
+    ArrayList<String> days = new ArrayList<>(Arrays.asList("Monday","Tuesday","Wednesday","Thursday",
+        "Friday","Saturday","Sunday"));
     if (thread.getParticipantsInThread().contains(excrept)) {
       return 0;
-    } else if ((excrept.startsWith("Monday")) || (excrept.startsWith("Tuesday")) || (excrept.startsWith("Wednesday")) ||
-        (excrept.startsWith("Thursday")) || (excrept.startsWith("Friday")) || (excrept.startsWith("Saturday")) ||
-        (excrept.startsWith("Sunday"))) {
+    } else if (days.contains(excrept)) {
       return 1;
     } else {
       return 2;
@@ -49,6 +65,7 @@ public class Main {
 
   private static void createMessageObjects(Thread thread) {
     List<String> longList = thread.getLinesAsStrings();
+    count.set(0);
     for (int i = 0; i < longList.size(); i++) {
       if (fieldIdentifier(thread, longList.get(i)) == 0) {
         Message message = new Message();
@@ -62,6 +79,9 @@ public class Main {
           allContent += longList.get(i + 3);
         }
         message.setContent(allContent);
+        message.setContentNumberOfCharacters(allContent.length());
+        String trimmed = allContent.trim();
+        message.setContentNumberOfWords(trimmed.isEmpty() ? 0 : trimmed.split("\\s+").length);
         thread.getMessagesInThread().add(message);
       }
     }
@@ -100,5 +120,9 @@ public class Main {
       everyString += lines.get(i);
     }
     return removeInvalidCharacters(everyString);
+  }
+
+  private static String currentTime() {
+    return new SimpleDateFormat("yyyy.MM.dd_hh.mm").format(Calendar.getInstance().getTime());
   }
 }

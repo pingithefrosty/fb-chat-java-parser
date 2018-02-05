@@ -10,12 +10,22 @@ public class Thread {
   private List<String> linesAsStrings;
   private ArrayList<String> participantsInThread;
   private ArrayList<Message> messagesInThread;
+  private String groupConversation;
 
   public Thread(String originalFileName) {
     this.originalFileName = originalFileName;
-    this.lastUpdated = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+    this.lastUpdated = new SimpleDateFormat("yyyy.MM.dd").format(Calendar.getInstance().getTime());
     participantsInThread = new ArrayList<>();
     messagesInThread = new ArrayList<>();
+    groupConversation = "0";
+  }
+
+  public String getGroupConversation() {
+    return groupConversation;
+  }
+
+  public void setGroupConversation(String groupConversation) {
+    this.groupConversation = groupConversation;
   }
 
   public String getOriginalFileName() {
