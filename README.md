@@ -1,5 +1,7 @@
 # JAVA Parser into CSV for downloaded Facebook Chat Archive
 
+|Java Versions| |Build Status|
+
 ## Important note
 Please note that this is an alpha version done by a junior developer in his spare time and is intended for developers. Right know it only works in a IDE (I used IntelliJ) and you need to customize some things in order to make it work for your individual needs.
 
