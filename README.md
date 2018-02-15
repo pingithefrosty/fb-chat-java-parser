@@ -15,7 +15,7 @@ In this archive you have everything including, your videos, posts, but we will o
 * Replaces special html characters.
 * Reformats time into a 24 hour format and separate columns for year, month, day, day of the week, and hour/minute.
 * Counts characters and words in a message.
-* Decides if it is a groupconversation or not.
+* Decides if it is a group conversation or not and labels it.
 
 ##  Description of the program
 * The message class stores each individual message. 
