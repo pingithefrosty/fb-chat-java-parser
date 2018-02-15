@@ -8,15 +8,14 @@ public class Main {
   private static final String MY_NAME = "Barnabas Kdr";
   public static final AtomicInteger count = new AtomicInteger(0);
   public static ArrayList<Thread> threadList = new ArrayList<>();
-//Bugged: 414/555(left), 1438(myself), 1081(name of the participant written)
 
   public static void main(String[] args) throws ParseException {
-    ReadWrite.listAndReadFiles("data");
-    for (int i = 0; i < threadList.size(); i++) {
-      divideByHtmlBlockIntoArray(threadList.get(i));
-      participantGetter(threadList.get(i));
-      createMessageObjects(threadList.get(i));
-      reformatMessageDate(threadList.get(i));
+    ReadWrite.listAndReadFiles("data/FBall");
+    for (Thread aThread: threadList) {
+      divideByHtmlBlockIntoArray(aThread);
+      participantGetter(aThread);
+      createMessageObjects(aThread);
+      reformatMessageDate(aThread);
     }
     ReadWrite.writeToCombinedCSV(threadList, "data/combined_" + currentTime() + ".csv");
   }
